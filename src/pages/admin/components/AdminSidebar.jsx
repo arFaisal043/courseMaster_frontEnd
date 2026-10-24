@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { NavLink, useLocation } from "react-router-dom";
+import { NavLink } from "react-router-dom";
 import {
     LayoutDashboard,
     BookOpen,
@@ -14,20 +14,17 @@ import {
 
 export default function AdminSidebar() {
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-    const location = useLocation();
 
-    const Item = ({ to, label, Icon, end = true, onClick, showLabel = true }) => {
+    const Item = ({ to, label, icon, end = true, onClick, showLabel = true }) => {
         const linkClass = ({ isActive: navIsActive }) => {
-            // Custom active check for routes with children
-            let isActive = navIsActive;
-
             const baseClasses = "flex items-center gap-3 px-3 py-2 rounded-lg transition-all duration-200";
-            if (isActive) {
+            if (navIsActive) {
                 return `${baseClasses} bg-primary text-primary-content font-semibold shadow-md`;
             }
             return `${baseClasses} text-base-content font-medium hover:bg-primary/20 hover:text-primary`;
         };
 
+        const IconComponent = icon;
         return (
             <NavLink
                 to={to}
@@ -35,7 +32,7 @@ export default function AdminSidebar() {
                 onClick={onClick}
                 className={linkClass}
             >
-                <Icon className="w-5 h-5 shrink-0" />
+                <IconComponent className="w-5 h-5 shrink-0" />
                 {showLabel && <span className="text-sm sm:text-base">{label}</span>}
             </NavLink>
         );
@@ -88,7 +85,7 @@ export default function AdminSidebar() {
                                 key={item.to}
                                 to={item.to}
                                 label={item.label}
-                                Icon={item.Icon}
+                                icon={item.Icon}
                                 end={item.end}
                                 onClick={() => setMobileMenuOpen(false)}
                                 showLabel={true}
@@ -105,7 +102,7 @@ export default function AdminSidebar() {
                         key={item.to}
                         to={item.to}
                         label={item.label}
-                        Icon={item.Icon}
+                        icon={item.Icon}
                         end={item.end}
                     />
                 ))}

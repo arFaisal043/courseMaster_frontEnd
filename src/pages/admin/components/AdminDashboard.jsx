@@ -1,31 +1,14 @@
-import { useEffect, useState } from "react";
 import { Outlet } from "react-router-dom";
-import { getMe } from "../../../services/auth.api";
+import { useSelector } from "react-redux";
 import AdminRoute from "../../../routes/AdminRoute";
 import AdminSidebar from "./AdminSidebar";
-// import AdminSidebar from "./components/AdminSidebar";
-// import { useEffect, useState } from "react";
-// import { getToken } from "../../utils/auth";
-// import { getMe } from "../../services/auth.api";
-// import AdminRoute from "../../routes/AdminRoute";
 
 export default function AdminDashboard() {
-    const [me, setMe] = useState(null);
-
-    useEffect(() => {
-        const loadMe = async () => {
-            try {
-                const res = await getMe();
-                setMe(res.data);
-            } catch (err) {
-                console.error("Failed to load user:", err);
-            }
-        };
-        loadMe();
-    }, []);
+    const me = useSelector((state) => state.auth.user);
+    const loading = useSelector((state) => state.auth.loading);
 
     return (
-        <AdminRoute me={me}>
+        <AdminRoute me={me} loading={loading}>
             {/* full width override */}
             <div className="w-full max-w-none flex flex-col lg:flex-row min-h-[80vh]">
 

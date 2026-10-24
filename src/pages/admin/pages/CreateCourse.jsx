@@ -363,7 +363,9 @@ export default function CreateCourse() {
                                                                             if (mIdx === modIdx) {
                                                                                 const newLessons = mod.lessons.map((les, lIdx) => {
                                                                                     if (lIdx === lesIdx) {
-                                                                                        const { liveClassLink, liveClassDate, ...rest } = les;
+                                                                                        const rest = { ...les };
+                                                                                        delete rest.liveClassLink;
+                                                                                        delete rest.liveClassDate;
                                                                                         return rest;
                                                                                     }
                                                                                     return les;
@@ -472,7 +474,8 @@ export default function CreateCourse() {
                                                                             if (mIdx === modIdx) {
                                                                                 const newLessons = mod.lessons.map((les, lIdx) => {
                                                                                     if (lIdx === lesIdx) {
-                                                                                        const { assignmentPrompt, ...rest } = les;
+                                                                                        const rest = { ...les };
+                                                                                        delete rest.assignmentPrompt;
                                                                                         return rest;
                                                                                     }
                                                                                     return les;

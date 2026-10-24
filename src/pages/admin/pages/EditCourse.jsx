@@ -9,7 +9,7 @@ export default function EditCourse() {
     const dispatch = useDispatch();
     const navigate = useNavigate();
 
-    const { currentCourse, detailLoading } = useSelector((state) => state.courses);
+    const { detailLoading, error: courseError } = useSelector((state) => state.courses);
     const { creating, error } = useSelector((state) => state.admin);
 
     const [form, setForm] = useState({
@@ -24,25 +24,26 @@ export default function EditCourse() {
     });
 
     useEffect(() => {
-        if (!currentCourse || currentCourse._id !== id) {
-            dispatch(fetchCourseById(id));
-        }
-    }, [dispatch, id, currentCourse]);
-
-    useEffect(() => {
-        if (currentCourse) {
-            setForm({
-                title: currentCourse.title || "",
-                description: currentCourse.description || "",
-                instructorName: currentCourse.instructorName || "",
-                price: currentCourse.price || 0,
-                category: currentCourse.category || "",
-                tags: (currentCourse.tags || []).join(", "),
-                batches: currentCourse.batches || [],
-                syllabus: currentCourse.syllabus || [],
-            });
-        }
-    }, [currentCourse]);
+        let active = true;
+        dispatch(fetchCourseById(id)).then((result) => {
+            if (active && fetchCourseById.fulfilled.match(result)) {
+                const course = result.payload;
+                setForm({
+                    title: course.title || "",
+                    description: course.description || "",
+                    instructorName: course.instructorName || "",
+                    price: course.price || 0,
+                    category: course.category || "",
+                    tags: (course.tags || []).join(", "),
+                    batches: course.batches || [],
+                    syllabus: course.syllabus || [],
+                });
+            }
+        });
+        return () => {
+            active = false;
+        };
+    }, [dispatch, id]);
 
     const handleChange = (e) => {
         const { name, value } = e.target;
@@ -104,6 +105,10 @@ export default function EditCourse() {
                 <span className="loading loading-spinner loading-lg"></span>
             </div>
         );
+    }
+
+    if (courseError) {
+        return <div className="alert alert-error">{courseError}</div>;
     }
 
     return (
@@ -389,7 +394,9 @@ export default function EditCourse() {
                                                                             if (mIdx === modIdx) {
                                                                                 const newLessons = mod.lessons.map((les, lIdx) => {
                                                                                     if (lIdx === lesIdx) {
-                                                                                        const { liveClassLink, liveClassDate, ...rest } = les;
+                                                                                        const rest = { ...les };
+                                                                                        delete rest.liveClassLink;
+                                                                                        delete rest.liveClassDate;
                                                                                         return rest;
                                                                                     }
                                                                                     return les;
@@ -498,7 +505,8 @@ export default function EditCourse() {
                                                                             if (mIdx === modIdx) {
                                                                                 const newLessons = mod.lessons.map((les, lIdx) => {
                                                                                     if (lIdx === lesIdx) {
-                                                                                        const { assignmentPrompt, ...rest } = les;
+                                                                                        const rest = { ...les };
+                                                                                        delete rest.assignmentPrompt;
                                                                                         return rest;
                                                                                     }
                                                                                     return les;

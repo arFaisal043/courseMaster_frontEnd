@@ -1,35 +1,15 @@
 import { Navigate } from "react-router-dom";
-import { useEffect, useState } from "react";
+import { useSelector } from "react-redux";
 import { getToken } from "../utils/auth";
-import { getMe } from "../services/auth.api";
 
 export default function ProtectedRoute({ children }) {
-  const [isValid, setIsValid] = useState(null);
-  const token = getToken();
+  const { token, user, loading, isAuthenticated, sessionChecked, error } = useSelector((state) => state.auth);
 
-  useEffect(() => {
-    // Check if dev bypass is enabled for testing/grading protected routes
-    const isBypass = localStorage.getItem("dev_bypass") === "true" || window.location.search.includes("bypass=true");
-    if (isBypass) {
-      setIsValid(true);
-      return;
-    }
+  if (!token || !getToken()) {
+    return <Navigate to="/login" replace />;
+  }
 
-    if (!token) {
-      setIsValid(false);
-      return;
-    }
-
-    // Verify token is valid
-    getMe()
-      .then(() => setIsValid(true))
-      .catch(() => {
-        // Fallback: if token exists but network/server check fails, still allow if token exists
-        setIsValid(!!token);
-      });
-  }, [token]);
-
-  if (isValid === null) {
+  if (loading || !sessionChecked) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <span className="loading loading-spinner loading-lg"></span>
@@ -37,7 +17,17 @@ export default function ProtectedRoute({ children }) {
     );
   }
 
-  if (!isValid) {
+  if (!isAuthenticated || !user) {
+    if (error) {
+      return (
+        <div role="alert" className="alert alert-error m-6">
+          <span>Unable to verify your session. Check your connection and try again.</span>
+          <button type="button" className="btn btn-sm" onClick={() => window.location.reload()}>
+            Retry
+          </button>
+        </div>
+      );
+    }
     return <Navigate to="/login" replace />;
   }
 

@@ -15,7 +15,7 @@ export default function CourseDetails() {
 
     const { currentCourse, detailLoading, error: courseError } = useSelector((state) => state.courses);
     const { enrolling, error: enrollError, success, enrollments: myEnrollments } = useSelector((state) => state.enrollment);
-    const { user, token, isAuthenticated } = useSelector((state) => state.auth);
+    const { user, token } = useSelector((state) => state.auth);
     const [selectedBatchId, setSelectedBatchId] = useState(null);
 
     useEffect(() => {
@@ -37,21 +37,25 @@ export default function CourseDetails() {
     const alreadyEnrolled = !!myEnrollments?.find((e) => e.course?._id === id);
 
     const handleEnroll = async () => {
-        // if user object not present but token exists, attempt to fetch profile
-        if (!user && token) {
+        let authenticatedUser = user;
+        if (!authenticatedUser && token) {
             try {
-                await dispatch(getMeAsync()).unwrap();
-            } catch (err) {
-                // ignore, will redirect to login below
+                authenticatedUser = await dispatch(getMeAsync()).unwrap();
+            } catch {
+                navigate("/login");
+                return;
             }
         }
 
-        if (!user && !isAuthenticated) {
+        if (!authenticatedUser) {
             navigate("/login");
             return;
         }
 
-        if (cannotEnroll) return;
+        if (
+            authenticatedUser.role === "admin" ||
+            authenticatedUser._id === currentCourse?.instructorId
+        ) return;
 
         // Note: Since batches don't have _id in the model, we pass null
         // The backend can be updated later to handle batch references properly
@@ -113,7 +117,7 @@ export default function CourseDetails() {
                             WebkitBackgroundClip: 'text',
                             WebkitTextFillColor: 'transparent',
                             backgroundClip: 'text'
-                        }}>৳ {course.price * 100}</p>
+                        }}>৳ {Number(course.price || 0).toLocaleString()}</p>
 
                         <div>
                             {isAdmin ? (

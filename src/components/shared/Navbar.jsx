@@ -1,40 +1,23 @@
 import { Link, NavLink, useNavigate } from "react-router-dom";
-import { useEffect, useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
 import Logo from "./Logo";
 import ThemeToggle from "./ThemeToggle";
-import { getToken, clearToken } from "../../utils/auth";
-import { getMe } from "../../services/auth.api";
+import { logout } from "../../store/slices/authSlice";
 
 export default function Navbar() {
     const navigate = useNavigate();
-    const token = getToken();
-    const [me, setMe] = useState(null);
+    const dispatch = useDispatch();
+    const { isAuthenticated, user: me } = useSelector((state) => state.auth);
 
-    const navLinkClass = ({ isActive, to }) =>
-        (isActive || window.location.pathname.startsWith("/"))
+    const navLinkClass = ({ isActive }) =>
+        isActive
             ? "text-primary font-semibold"
             : "text-base-content/80 hover:text-primary";
 
     const handleLogout = () => {
-        clearToken();
-        setMe(null);
+        dispatch(logout());
         navigate("/");
-        window.location.reload();
     };
-
-    useEffect(() => {
-        const loadMe = async () => {
-            if (!token) return setMe(null);
-            try {
-                const res = await getMe();
-                setMe(res.data);
-            } catch {
-                clearToken();
-                setMe(null);
-            }
-        };
-        loadMe();
-    }, [token]);
 
     const initials = me?.name
         ? me.name.split(" ").map(w => w[0]).slice(0, 2).join("").toUpperCase()
@@ -55,8 +38,7 @@ export default function Navbar() {
                         <li><NavLink className={navLinkClass} to="/">Home</NavLink></li>
                         <li><NavLink className={navLinkClass} to="/courses">Courses</NavLink></li>
 
-                        {/* ✅ Dashboard when logged in OR when dev_bypass is active */}
-                        {(token && me) ? (
+                        {(isAuthenticated && me) ? (
                             <li>
                                 <NavLink
                                     className={navLinkClass}
@@ -65,11 +47,6 @@ export default function Navbar() {
                                     Dashboard
                                 </NavLink>
                             </li>
-                        ) : (localStorage.getItem("dev_bypass") === "true") ? (
-                            <>
-                                <li><NavLink className={navLinkClass} to="/student">Student Portal</NavLink></li>
-                                <li><NavLink className={navLinkClass} to="/admin">Admin Portal</NavLink></li>
-                            </>
                         ) : null}
                     </ul>
                 </div>
@@ -80,7 +57,7 @@ export default function Navbar() {
                     <ThemeToggle />
 
                     {/* Desktop buttons if NOT logged in */}
-                    {!token && (
+                    {!isAuthenticated && (
                         <div className="hidden md:flex gap-2">
                             <Link to="/login" className="btn btn-sm btn-ghost">Login</Link>
                             <Link to="/register" className="btn btn-sm btn-primary">Enroll Now</Link>
@@ -88,7 +65,7 @@ export default function Navbar() {
                     )}
 
                     {/* Desktop avatar if logged in */}
-                    {token && me && (
+                    {isAuthenticated && me && (
                         <div className="hidden md:block dropdown dropdown-end">
                             <label tabIndex={0} className="btn btn-ghost btn-circle avatar">
                                 <div className="w-9 rounded-full bg-primary text-primary-content flex items-center justify-center font-bold">
@@ -146,7 +123,7 @@ export default function Navbar() {
                             <li><NavLink className={navLinkClass} to="/courses">Courses</NavLink></li>
 
                             {/* ✅ Dashboard only when logged in */}
-                            {token && me && (
+                            {isAuthenticated && me && (
                                 <li>
                                     <NavLink
                                         className={navLinkClass}
@@ -159,7 +136,7 @@ export default function Navbar() {
 
                             <div className="my-2 w-full border-t border-base-300" />
 
-                            {!token ? (
+                            {!isAuthenticated ? (
                                 <>
                                     <li className="w-full">
                                         <Link to="/login" className="btn btn-ghost btn-sm w-full">Login</Link>

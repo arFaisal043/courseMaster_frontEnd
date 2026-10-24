@@ -31,14 +31,21 @@ export const registerAsync = createAsyncThunk(
 export const getMeAsync = createAsyncThunk(
     "auth/getMe",
     async (_, { rejectWithValue }) => {
+        const token = getToken();
+        if (!token) {
+            return rejectWithValue({ message: "No token", invalidSession: true });
+        }
+
         try {
-            const token = getToken();
-            if (!token) throw new Error("No token");
             const res = await getMe();
             return res.data;
         } catch (err) {
-            clearToken();
-            return rejectWithValue(err.response?.data?.message || "Failed to load user");
+            const invalidSession = [401, 403].includes(err.response?.status);
+            if (invalidSession) clearToken();
+            return rejectWithValue({
+                message: err.response?.data?.message || "Failed to load user",
+                invalidSession,
+            });
         }
     }
 );
@@ -50,7 +57,8 @@ const authSlice = createSlice({
         token: getToken() || null,
         loading: false,
         error: null,
-        isAuthenticated: !!getToken(),
+        isAuthenticated: false,
+        sessionChecked: false,
     },
     reducers: {
         logout: (state) => {
@@ -58,6 +66,7 @@ const authSlice = createSlice({
             state.token = null;
             state.isAuthenticated = false;
             state.error = null;
+            state.sessionChecked = true;
             clearToken();
         },
         clearError: (state) => {
@@ -76,6 +85,7 @@ const authSlice = createSlice({
                 state.user = action.payload.user;
                 state.token = action.payload.token;
                 state.isAuthenticated = true;
+                state.sessionChecked = true;
             })
             .addCase(registerAsync.rejected, (state, action) => {
                 state.loading = false;
@@ -92,6 +102,7 @@ const authSlice = createSlice({
                 state.user = action.payload.user;
                 state.token = action.payload.token;
                 state.isAuthenticated = true;
+                state.sessionChecked = true;
             })
             .addCase(loginAsync.rejected, (state, action) => {
                 state.loading = false;
@@ -101,17 +112,23 @@ const authSlice = createSlice({
             // GetMe
             .addCase(getMeAsync.pending, (state) => {
                 state.loading = true;
+                state.error = null;
             })
             .addCase(getMeAsync.fulfilled, (state, action) => {
                 state.loading = false;
                 state.user = action.payload;
                 state.isAuthenticated = true;
+                state.sessionChecked = true;
             })
-            .addCase(getMeAsync.rejected, (state) => {
+            .addCase(getMeAsync.rejected, (state, action) => {
                 state.loading = false;
                 state.user = null;
-                state.token = null;
+                if (action.payload?.invalidSession) {
+                    state.token = null;
+                }
                 state.isAuthenticated = false;
+                state.sessionChecked = true;
+                state.error = action.payload?.message || "Failed to load user";
             });
     },
 });
